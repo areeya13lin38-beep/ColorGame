@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>เกมสตรูปเลือกสี พร้อมสรุปผล</title>
+  <style>
+    :root{
+      --bg1:#eef6ff;
+      --bg2:#ffffff;
+      --card:#ffffff;
+      --text:#1f2937;
+      --muted:#6b7280;
+      --primary:#2563eb;
+      --primary-dark:#1d4ed8;
+      --success:#16a34a;
+      --danger:#dc2626;
+      --shadow:0 10px 30px rgba(37,99,235,0.12);
+      --radius:24px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans Thai","Helvetica Neue",Arial,sans-serif;
+      background: linear-gradient(180deg, var(--bg1), var(--bg2));
+      color:var(--text);
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+    }
+    .wrap{ width:min(980px, 100%); }
+    .card{
+      background:var(--card);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:30px;
+    }
+    h1{
+      margin:0 0 8px;
+      font-size:clamp(32px, 4.5vw, 46px);
+      text-align:center;
+    }
+    .subtitle{
+      text-align:center;
+      color:var(--muted);
+      margin-bottom:18px;
+      line-height:1.8;
+      font-size:20px;
+    }
+    .topbar{
+      display:flex;
+      gap:12px;
+      justify-content:center;
+      flex-wrap:wrap;
+      margin-bottom:22px;
+    }
+    .pill{
+      background:#eff6ff;
+      color:#1e40af;
+      padding:12px 18px;
+      border-radius:999px;
+      font-weight:800;
+      min-width:140px;
+      text-align:center;
+      font-size:22px;
+    }
+    .game-area{
+      border:2px dashed #dbeafe;
+      border-radius:20px;
+      padding:32px 24px;
+      text-align:center;
+      background:#f8fbff;
+      min-height:340px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+    }
+    .instruction{
+      font-size:24px;
+      color:var(--muted);
+      margin-bottom:16px;
+      font-weight:700;
+    }
+    .word{
+      font-size:clamp(76px, 12vw, 126px);
+      font-weight:900;
+      letter-spacing:1px;
+      margin:10px 0 20px;
+      user-select:none;
+      line-height:1.1;
+    }
+    .result{
+      min-height:40px;
+      font-size:28px;
+      font-weight:900;
+      margin-bottom:8px;
+    }
+    .choices{
+      display:grid;
+      grid-template-columns:repeat(3, minmax(120px, 1fr));
+      gap:14px;
+      margin-top:22px;
+      width:100%;
+      max-width:760px;
+    }
+    button{
+      border:none;
+      border-radius:18px;
+      padding:18px 18px;
+      font-size:24px;
+      font-weight:900;
+      cursor:pointer;
+      transition:transform .08s ease, box-shadow .15s ease, background .2s ease;
+    }
+    button:hover{ transform:translateY(-1px); }
+    button:active{ transform:translateY(1px); }
+    .choice{
+      background:#dbeafe;
+      color:#1e3a8a;
+      box-shadow:0 6px 16px rgba(59,130,246,0.14);
+    }
+    .choice:hover{ background:#bfdbfe; }
+    .controls{
+      display:flex;
+      gap:12px;
+      justify-content:center;
+      flex-wrap:wrap;
+      margin-top:22px;
+    }
+    .primary{ background:var(--primary); color:white; }
+    .primary:hover{ background:var(--primary-dark); }
+    .secondary{ background:#e5e7eb; color:#111827; }
+    .secondary:hover{ background:#d1d5db; }
+    .footer-note{
+      text-align:center;
+      color:var(--muted);
+      margin-top:16px;
+      font-size:17px;
+      line-height:1.7;
+    }
+    .hidden{ display:none; }
+    .end-box{ text-align:center; padding:10px 0; width:100%; }
+    .end-box h2{ margin:0 0 10px; font-size:38px; }
+    .end-score{
+      font-size:60px;
+      font-weight:900;
+      color:var(--primary);
+      margin:10px 0;
+    }
+    .speaker-note{
+      font-size:18px;
+      color:#4b5563;
+      margin-top:8px;
+    }
+    .summary-grid{
+      display:grid;
+      grid-template-columns:repeat(2, minmax(240px, 1fr));
+      gap:14px;
+      width:100%;
+      max-width:820px;
+      margin:22px auto 0;
+      text-align:left;
+    }
+    .summary-card{
+      background:#ffffff;
+      border:1px solid #dbeafe;
+      border-radius:18px;
+      padding:16px 18px;
+      box-shadow:0 4px 12px rgba(37,99,235,0.06);
+    }
+    .summary-label{
+      color:#6b7280;
+      font-size:17px;
+      margin-bottom:6px;
+    }
+    .summary-value{
+      font-size:30px;
+      font-weight:900;
+      color:#1e40af;
+      line-height:1.2;
+    }
+    .summary-sub{
+      font-size:15px;
+      color:#6b7280;
+      margin-top:4px;
+      line-height:1.5;
+    }
+    .interpret-box{
+      margin-top:18px;
+      background:#eff6ff;
+      border-radius:18px;
+      padding:18px;
+      font-size:19px;
+      line-height:1.8;
+      text-align:left;
+      max-width:820px;
+      margin-left:auto;
+      margin-right:auto;
+    }
+    .copy-note{
+      margin-top:14px;
+      color:#4b5563;
+      font-size:16px;
+    }
+    @media (max-width:760px){
+      .choices{ grid-template-columns:repeat(2, minmax(120px, 1fr)); }
+      .summary-grid{ grid-template-columns:1fr; }
+    }
+    @media (max-width:520px){
+      .card{ padding:20px; }
+      .subtitle{ font-size:18px; }
+      .pill{ min-width:110px; font-size:19px; }
+      button{ font-size:21px; padding:16px 12px; }
+      .instruction{ font-size:21px; }
+      .result{ font-size:24px; }
+      .summary-value{ font-size:26px; }
+    }
+  
+    .participant-form{
+      display:grid;
+      grid-template-columns:repeat(2, minmax(220px, 1fr));
+      gap:14px;
+      width:100%;
+      max-width:820px;
+      margin:0 auto 20px;
+      text-align:left;
+    }
+    .field{ display:flex; flex-direction:column; gap:6px; }
+    .field.full{ grid-column:1 / -1; }
+    .field label{ font-size:17px; font-weight:800; color:#374151; }
+    .field input{
+      width:100%; padding:14px 16px; border-radius:14px; border:1px solid #cbd5e1;
+      font-size:18px; font-family:inherit; background:#fff;
+    }
+    .status-note{ margin-top:12px; font-size:16px; color:#4b5563; text-align:center; min-height:24px; }
+    @media (max-width:760px){ .participant-form{ grid-template-columns:1fr; } }
+
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>เกมเลือกสีของตัวอักษร</h1>
+      <div class="subtitle">
+        ดู <strong>สีจริงของตัวอักษร</strong> แล้วกดคำตอบให้ถูก<br>
+        ห้ามอ่านตามคำที่เขียนนะคะ
+      </div>
+
+
+      <div class="participant-form">
+        <div class="field">
+          <label for="participantName">ชื่อผู้เข้าร่วม</label>
+          <input type="text" id="participantName" placeholder="กรอกชื่อผู้เข้าร่วม" />
+        </div>
+        <div class="field">
+          <label for="participantId">รหัสผู้เข้าร่วม</label>
+          <input type="text" id="participantId" placeholder="เช่น P001" />
+        </div>
+        <div class="field">
+          <label for="assessmentDate">วันที่ประเมิน</label>
+          <input type="date" id="assessmentDate" />
+        </div>
+      </div>
+      <div class="status-note" style="margin-top:-6px;margin-bottom:18px;color:#1e40af;">เกมนี้ตั้งค่าให้บันทึกผลอัตโนมัติหลังจบเกมแล้ว</div>
+
+      <div class="topbar">
+        <div class="pill">เวลา: <span id="time">30</span> วิ</div>
+        <div class="pill">คะแนน: <span id="score">0</span></div>
+        <div class="pill">ข้อที่: <span id="round">0</span></div>
+      </div>
+
+      <div class="game-area" id="gameArea">
+        <div id="playView">
+          <div class="instruction">เลือก “สีของตัวอักษร”</div>
+          <div class="word" id="word">สีแดง</div>
+          <div class="result" id="result"></div>
+
+          <div class="choices" id="choices"></div>
+          <div class="speaker-note">เปิดเสียงไว้ จะมีเสียงตอบกลับเมื่อกดคำตอบ</div>
+        </div>
+
+        <div id="startView">
+          <div class="end-box">
+            <h2>พร้อมเล่นไหม</h2>
+            <div class="subtitle">มีเวลา 30 วินาที ตอบให้ได้มากที่สุด</div>
+          </div>
+        </div>
+
+        <div id="endView" class="hidden">
+          <div class="end-box">
+            <h2>หมดเวลา!</h2>
+            <div style="font-size:24px">คะแนนรวมหลังเล่นเกม</div>
+            <div class="end-score" id="finalScore">0</div>
+            <div class="subtitle" id="feedback"></div>
+
+            <div class="summary-grid">
+              <div class="summary-card">
+                <div class="summary-label">จำนวนข้อที่ตอบทั้งหมด</div>
+                <div class="summary-value" id="attemptedValue">0</div>
+                <div class="summary-sub">นับจากจำนวนครั้งที่ผู้เล่นกดตอบ</div>
+              </div>
+              <div class="summary-card">
+                <div class="summary-label">ตอบถูก</div>
+                <div class="summary-value" id="correctValue">0</div>
+                <div class="summary-sub">คะแนนที่ได้จากการตอบถูก</div>
+              </div>
+              <div class="summary-card">
+                <div class="summary-label">ตอบผิด</div>
+                <div class="summary-value" id="wrongValue">0</div>
+                <div class="summary-sub">ใช้ดูจำนวนข้อที่ยังสับสน</div>
+              </div>
+              <div class="summary-card">
+                <div class="summary-label">ความแม่นยำ</div>
+                <div class="summary-value" id="accuracyValue">0%</div>
+                <div class="summary-sub">คำนวณจาก ตอบถูก ÷ ตอบทั้งหมด × 100</div>
+              </div>
+              <div class="summary-card">
+                <div class="summary-label">เวลาที่ใช้ทั้งหมด</div>
+                <div class="summary-value" id="usedTimeValue">0 วินาที</div>
+                <div class="summary-sub">ค่าเริ่มต้นกำหนดไว้ 30 วินาทีต่อรอบ</div>
+              </div>
+              <div class="summary-card">
+                <div class="summary-label">เวลาเฉลี่ยต่อข้อ</div>
+                <div class="summary-value" id="avgTimeValue">0 วินาที</div>
+                <div class="summary-sub">คำนวณจาก เวลาที่ใช้ทั้งหมด ÷ จำนวนข้อที่ตอบ</div>
+              </div>
+            </div>
+
+            <div class="interpret-box" id="interpretBox"></div>
+            <div class="copy-note" id="copyNote">สามารถคัดลอกผลลัพธ์นี้ไปใช้สรุปผลโครงการได้</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="primary" id="startBtn">เริ่มเกม</button>
+        <button class="secondary" id="restartBtn">เล่นใหม่</button>
+        <button class="secondary hidden" id="copyBtn">คัดลอกผลสรุป</button>
+        <button class="primary hidden" id="sendBtn">ส่งผลอีกครั้ง</button>
+      </div>
+
+      <div class="status-note" id="statusNote"></div>
+
+      <div class="footer-note">
+        ไฟล์นี้เปิดในเบราว์เซอร์ได้เลย ทั้งมือถือและคอมพิวเตอร์<br>
+        เวอร์ชันนี้เพิ่มสีที่ใช้ทั่วไป ได้แก่ แดง ฟ้า เขียว ส้ม ดำ ชมพู พร้อมช่องชื่อ รหัส วันที่ประเมิน และระบบส่งผลอัตโนมัติหลังจบเกมไปยัง Google Sheets
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const GAME_DURATION = 30;
+
+    const words = [
+      'สีแดง', 'สีฟ้า', 'สีเขียว', 'สีส้ม', 'สีดำ', 'สีชมพู'
+    ];
+
+    const colors = [
+      { key: 'red', label: 'แดง' },
+      { key: 'blue', label: 'ฟ้า' },
+      { key: 'green', label: 'เขียว' },
+      { key: 'orange', label: 'ส้ม' },
+      { key: 'black', label: 'ดำ' },
+      { key: 'deeppink', label: 'ชมพู' }
+    ];
+
+    let score = 0;
+    let round = 0;
+    let answeredCount = 0;
+    let wrongCount = 0;
+    let timeLeft = GAME_DURATION;
+    let timer = null;
+    let correctColor = '';
+    let gameActive = false;
+    let audioCtx = null;
+
+    const wordEl = document.getElementById('word');
+    const resultEl = document.getElementById('result');
+    const scoreEl = document.getElementById('score');
+    const roundEl = document.getElementById('round');
+    const timeEl = document.getElementById('time');
+    const finalScoreEl = document.getElementById('finalScore');
+    const feedbackEl = document.getElementById('feedback');
+    const startBtn = document.getElementById('startBtn');
+    const restartBtn = document.getElementById('restartBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const sendBtn = document.getElementById('sendBtn');
+    const participantNameEl = document.getElementById('participantName');
+    const participantIdEl = document.getElementById('participantId');
+    const assessmentDateEl = document.getElementById('assessmentDate');
+    const statusNote = document.getElementById('statusNote');
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxssZzjpn8B1WGFD3T24MgyZ2cYD9LoejTxavVjxKP54NN1VUDOfv2TON8TABL9ZrEB/exec';
+    const startView = document.getElementById('startView');
+    const playView = document.getElementById('playView');
+    const endView = document.getElementById('endView');
+    const choicesContainer = document.getElementById('choices');
+    const attemptedValue = document.getElementById('attemptedValue');
+    const correctValue = document.getElementById('correctValue');
+    const wrongValue = document.getElementById('wrongValue');
+    const accuracyValue = document.getElementById('accuracyValue');
+    const usedTimeValue = document.getElementById('usedTimeValue');
+    const avgTimeValue = document.getElementById('avgTimeValue');
+    const interpretBox = document.getElementById('interpretBox');
+    const copyNote = document.getElementById('copyNote');
+
+
+    function setTodayDate(){
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      assessmentDateEl.value = `${yyyy}-${mm}-${dd}`;
+    }
+
+    async function sendToGoogleSheets(autoMode = false){
+      const scriptUrl = SCRIPT_URL;
+      if(!scriptUrl){
+        statusNote.textContent = autoMode ? 'ยังไม่ได้ตั้งค่า URL สำหรับบันทึกผลอัตโนมัติ' : 'ยังไม่ได้ตั้งค่า URL สำหรับบันทึกผล';
+        return false;
+      }
+      const usedTime = GAME_DURATION - timeLeft;
+      const accuracy = answeredCount > 0 ? (score / answeredCount) * 100 : 0;
+      const avgTime = answeredCount > 0 ? usedTime / answeredCount : 0;
+      const payload = {
+        participant_name: participantNameEl.value.trim(),
+        participant_id: participantIdEl.value.trim(),
+        assessment_date: assessmentDateEl.value,
+        score: score,
+        total_answered: answeredCount,
+        correct: score,
+        wrong: wrongCount,
+        accuracy_percent: Number(accuracy.toFixed(2)),
+        total_time_seconds: Number(usedTime.toFixed(2)),
+        avg_time_per_item: Number(avgTime.toFixed(2)),
+        user_agent: navigator.userAgent
+      };
+      try {
+        statusNote.textContent = 'กำลังส่งข้อมูล...';
+        const response = await fetch(scriptUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload)
+        });
+        const text = await response.text();
+        statusNote.textContent = autoMode ? (text || 'ส่งข้อมูลอัตโนมัติสำเร็จ') : (text || 'ส่งข้อมูลสำเร็จ');
+        return true;
+      } catch (error) {
+        statusNote.textContent = autoMode ? 'ส่งข้อมูลอัตโนมัติไม่สำเร็จ กรุณาตรวจสอบ URL หรือการตั้งค่า Apps Script' : 'ส่งข้อมูลไม่สำเร็จ กรุณาตรวจสอบ URL หรือการตั้งค่า Apps Script';
+        return false;
+      }
+    }
+
+    function createChoiceButtons(){
+      choicesContainer.innerHTML = '';
+      colors.forEach(color => {
+        const btn = document.createElement('button');
+        btn.className = 'choice';
+        btn.dataset.color = color.key;
+        btn.textContent = color.label;
+        btn.addEventListener('click', () => handleAnswer(color.key));
+        choicesContainer.appendChild(btn);
+      });
+    }
+
+    function randomItem(arr){
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function newRound(){
+      if(!gameActive) return;
+      const randomWord = randomItem(words);
+      const randomColor = randomItem(colors);
+
+      wordEl.textContent = randomWord;
+      wordEl.style.color = randomColor.key;
+      correctColor = randomColor.key;
+      round++;
+      roundEl.textContent = round;
+      resultEl.textContent = '';
+    }
+
+    function updateScore(){
+      scoreEl.textContent = score;
+    }
+
+    function getFeedback(score){
+      if(score >= 24) return 'สุดยอดมาก ไวและแม่นมากเลย';
+      if(score >= 18) return 'เก่งมาก ตอบได้ดีมาก';
+      if(score >= 12) return 'ดีมาก ฝึกอีกนิดจะไวขึ้นอีก';
+      if(score >= 6) return 'เริ่มดีแล้ว ลองเล่นอีกรอบได้เลย';
+      return 'ไม่เป็นไร ลองใหม่อีกครั้งนะคะ';
+    }
+
+    function getInterpretation(accuracy, avgTime, score){
+      let accuracyText = 'ความแม่นยำยังอยู่ในระดับที่ควรฝึกเพิ่มเติม';
+      if(accuracy >= 80) accuracyText = 'ความแม่นยำอยู่ในระดับดีมาก';
+      else if(accuracy >= 60) accuracyText = 'ความแม่นยำอยู่ในระดับปานกลางถึงดี';
+
+      let speedText = 'ใช้เวลาต่อข้อค่อนข้างนาน';
+      if(avgTime > 0 && avgTime <= 1.5) speedText = 'ตอบได้ค่อนข้างรวดเร็ว';
+      else if(avgTime > 0 && avgTime <= 2.5) speedText = 'ตอบได้ในระดับความเร็วปานกลาง';
+
+      return `สรุปเบื้องต้น: ผู้เล่นได้คะแนน ${score} คะแนน จากการตอบทั้งหมด ${answeredCount} ข้อ ตอบถูก ${score} ข้อ ตอบผิด ${wrongCount} ข้อ มีความแม่นยำ ${accuracy.toFixed(2)}% และใช้เวลาเฉลี่ย ${avgTime.toFixed(2)} วินาทีต่อข้อ โดยภาพรวม${accuracyText} และ${speedText} เหมาะสำหรับนำไปใช้สรุปผลรายบุคคลหรือเปรียบเทียบก่อน–หลังเข้าร่วมกิจกรรมได้`;
+    }
+
+    function buildSummaryText(usedTime, accuracy, avgTime){
+      return `ผลการเล่นเกม Stroop: คะแนนรวม ${score} คะแนน, จำนวนข้อที่ตอบทั้งหมด ${answeredCount} ข้อ, ตอบถูก ${score} ข้อ, ตอบผิด ${wrongCount} ข้อ, ความแม่นยำ ${accuracy.toFixed(2)}%, เวลาที่ใช้ทั้งหมด ${usedTime.toFixed(2)} วินาที, เวลาเฉลี่ยต่อข้อ ${avgTime.toFixed(2)} วินาที`;
+    }
+
+    function initAudio(){
+      if(!audioCtx){
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if(AudioContextClass) audioCtx = new AudioContextClass();
+      }
+      if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function playTone(type){
+      if(!audioCtx) return;
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+
+      const now = audioCtx.currentTime;
+      if(type === 'correct'){
+        oscillator.frequency.setValueAtTime(660, now);
+        oscillator.frequency.exponentialRampToValueAtTime(880, now + 0.12);
+      } else {
+        oscillator.frequency.setValueAtTime(300, now);
+        oscillator.frequency.exponentialRampToValueAtTime(180, now + 0.16);
+      }
+      gainNode.gain.setValueAtTime(0.0001, now);
+      gainNode.gain.exponentialRampToValueAtTime(0.15, now + 0.02);
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
+      oscillator.type = type === 'correct' ? 'sine' : 'sawtooth';
+      oscillator.start(now);
+      oscillator.stop(now + 0.22);
+    }
+
+    function endGame(){
+      gameActive = false;
+      clearInterval(timer);
+      timer = null;
+
+      const usedTime = GAME_DURATION - timeLeft;
+      const accuracy = answeredCount > 0 ? (score / answeredCount) * 100 : 0;
+      const avgTime = answeredCount > 0 ? usedTime / answeredCount : 0;
+
+      finalScoreEl.textContent = score;
+      feedbackEl.textContent = getFeedback(score);
+      attemptedValue.textContent = answeredCount;
+      correctValue.textContent = score;
+      wrongValue.textContent = wrongCount;
+      accuracyValue.textContent = `${accuracy.toFixed(2)}%`;
+      usedTimeValue.textContent = `${usedTime.toFixed(2)} วินาที`;
+      avgTimeValue.textContent = `${avgTime.toFixed(2)} วินาที`;
+      interpretBox.textContent = getInterpretation(accuracy, avgTime, score);
+      copyNote.textContent = buildSummaryText(usedTime, accuracy, avgTime);
+
+      endView.classList.remove('hidden');
+      playView.classList.add('hidden');
+      startView.classList.add('hidden');
+      copyBtn.classList.remove('hidden');
+      sendBtn.classList.remove('hidden');
+      resultEl.textContent = '';
+
+      statusNote.textContent = 'เกมจบแล้ว ระบบกำลังส่งผลอัตโนมัติ...';
+      sendToGoogleSheets(true);
+    }
+
+    function startGame(){
+      initAudio();
+      score = 0;
+      round = 0;
+      answeredCount = 0;
+      wrongCount = 0;
+      timeLeft = GAME_DURATION;
+      gameActive = true;
+      updateScore();
+      roundEl.textContent = '0';
+      timeEl.textContent = timeLeft;
+      endView.classList.add('hidden');
+      startView.classList.add('hidden');
+      playView.classList.remove('hidden');
+      copyBtn.classList.add('hidden');
+      sendBtn.classList.add('hidden');
+      statusNote.textContent = ''; 
+      newRound();
+
+      clearInterval(timer);
+      timer = setInterval(() => {
+        timeLeft--;
+        timeEl.textContent = timeLeft;
+        if(timeLeft <= 0){
+          endGame();
+        }
+      }, 1000);
+    }
+
+    function handleAnswer(answer){
+      if(!gameActive) return;
+      initAudio();
+      answeredCount++;
+      if(answer === correctColor){
+        score++;
+        resultEl.textContent = 'ถูกต้อง!';
+        resultEl.style.color = '#16a34a';
+        playTone('correct');
+      } else {
+        wrongCount++;
+        resultEl.textContent = 'ยังไม่ถูก!';
+        resultEl.style.color = '#dc2626';
+        playTone('wrong');
+      }
+      updateScore();
+      setTimeout(newRound, 280);
+    }
+
+    async function copySummary(){
+      const text = copyNote.textContent;
+      try {
+        await navigator.clipboard.writeText(text);
+        copyBtn.textContent = 'คัดลอกแล้ว';
+        setTimeout(() => copyBtn.textContent = 'คัดลอกผลสรุป', 1400);
+      } catch (error) {
+        copyBtn.textContent = 'คัดลอกไม่สำเร็จ';
+        setTimeout(() => copyBtn.textContent = 'คัดลอกผลสรุป', 1400);
+      }
+    }
+
+    startBtn.addEventListener('click', startGame);
+    restartBtn.addEventListener('click', startGame);
+    copyBtn.addEventListener('click', copySummary);
+    sendBtn.addEventListener('click', sendToGoogleSheets);
+
+    setTodayDate();
+    createChoiceButtons();
+    playView.classList.add('hidden');
+    endView.classList.add('hidden');
+    startView.classList.remove('hidden');
+  </script>
+</body>
+</html>
