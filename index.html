@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>เกม Stroop ส่งผลอัตโนมัติ</title>
+  <style>
+    :root{
+      --bg1:#eef6ff; --bg2:#ffffff; --card:#ffffff; --text:#1f2937; --muted:#6b7280;
+      --primary:#2563eb; --primary-dark:#1d4ed8; --success:#16a34a; --danger:#dc2626;
+      --shadow:0 10px 30px rgba(37,99,235,0.12); --radius:22px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans Thai","Helvetica Neue",Arial,sans-serif;background:linear-gradient(180deg,var(--bg1),var(--bg2));color:var(--text);min-height:100vh;padding:20px}
+    .wrap{width:min(940px,100%);margin:0 auto}
+    .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:28px}
+    h1{margin:0 0 8px;font-size:clamp(30px,4vw,44px);text-align:center}
+    .subtitle{text-align:center;color:var(--muted);margin-bottom:18px;line-height:1.7}
+    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:18px}
+    .field{display:flex;flex-direction:column;gap:8px}
+    .field label{font-weight:700}
+    .field input{padding:14px 16px;border:1.5px solid #cbd5e1;border-radius:14px;font-size:18px}
+    .topbar{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:14px 0 20px}
+    .pill{background:#eff6ff;color:#1e40af;padding:12px 18px;border-radius:999px;font-weight:800;min-width:140px;text-align:center;font-size:20px}
+    .game-area{border:2px dashed #dbeafe;border-radius:18px;padding:28px 20px;text-align:center;background:#f8fbff;min-height:320px;display:flex;flex-direction:column;justify-content:center;align-items:center}
+    .instruction{font-size:24px;color:var(--muted);margin-bottom:14px}
+    .word{font-size:clamp(72px,12vw,118px);font-weight:900;letter-spacing:2px;margin:16px 0 18px;user-select:none;line-height:1.05}
+    .result{min-height:36px;font-size:28px;font-weight:800;margin-bottom:12px}
+    .choices{display:grid;grid-template-columns:repeat(3,minmax(130px,1fr));gap:16px;margin-top:22px;width:100%}
+    button{border:none;border-radius:16px;padding:18px 18px;font-size:24px;font-weight:800;cursor:pointer;transition:transform .08s ease,box-shadow .15s ease,background .2s ease}
+    button:hover{transform:translateY(-1px)} button:active{transform:translateY(1px)}
+    .choice{background:#dbeafe;color:#1e3a8a;box-shadow:0 6px 16px rgba(59,130,246,0.14)}
+    .choice:hover{background:#bfdbfe}
+    .controls{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:20px}
+    .primary{background:var(--primary);color:#fff}.primary:hover{background:var(--primary-dark)}
+    .secondary{background:#e5e7eb;color:#111827}.secondary:hover{background:#d1d5db}
+    .hidden{display:none}
+    .end-box{text-align:center;padding:10px 0;width:100%}
+    .end-box h2{margin:0 0 10px;font-size:38px}
+    .metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:20px 0}
+    .metric{background:#fff;border:1px solid #dbeafe;border-radius:18px;padding:18px;text-align:left}
+    .metric .label{font-size:18px;color:var(--muted)}
+    .metric .value{font-size:28px;font-weight:900;color:#1d4ed8;margin-top:6px}
+    .summary{background:#eef2ff;border-radius:18px;padding:18px;text-align:left;line-height:1.7;font-size:21px}
+    .status{margin-top:10px;font-size:18px;font-weight:700}
+    .success{color:var(--success)} .error{color:var(--danger)}
+    .note{text-align:center;color:var(--muted);margin-top:12px;font-size:16px}
+    @media (max-width:760px){
+      .grid,.metrics{grid-template-columns:1fr}
+      .choices{grid-template-columns:repeat(2,1fr)}
+      button{font-size:21px}
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>เกมเลือกสีของตัวอักษร</h1>
+    <div class="subtitle">ดู <strong>สีจริงของตัวอักษร</strong> แล้วกดคำตอบให้ถูก<br>เมื่อจบเกม ระบบจะส่งผลไป Google Sheets อัตโนมัติ</div>
+
+    <div class="grid">
+      <div class="field">
+        <label for="participantName">ชื่อผู้เข้าร่วม</label>
+        <input id="participantName" type="text" placeholder="เช่น A01 หรือ ชื่อเล่น" />
+      </div>
+      <div class="field">
+        <label for="participantId">รหัสผู้เข้าร่วม</label>
+        <input id="participantId" type="text" placeholder="เช่น P001" />
+      </div>
+      <div class="field">
+        <label for="assessmentDate">วันที่ประเมิน</label>
+        <input id="assessmentDate" type="date" />
+      </div>
+      <div class="field">
+        <label>สถานะการส่งผล</label>
+        <input id="sendStatusBox" type="text" value="ยังไม่ส่ง" readonly />
+      </div>
+    </div>
+
+    <div class="topbar">
+      <div class="pill">เวลา: <span id="time">30</span> วิ</div>
+      <div class="pill">คะแนน: <span id="score">0</span></div>
+      <div class="pill">ข้อที่: <span id="round">0</span></div>
+    </div>
+
+    <div class="game-area">
+      <div id="startView" class="end-box">
+        <h2>พร้อมเล่นไหม</h2>
+        <div class="subtitle">มีเวลา 30 วินาที ตอบให้ได้มากที่สุด</div>
+      </div>
+
+      <div id="playView" class="hidden" style="width:100%">
+        <div class="instruction">เลือก “สีของตัวอักษร”</div>
+        <div class="word" id="word">สีแดง</div>
+        <div class="result" id="result"></div>
+        <div class="choices">
+          <button class="choice" data-color="red">แดง</button>
+          <button class="choice" data-color="blue">ฟ้า</button>
+          <button class="choice" data-color="green">เขียว</button>
+          <button class="choice" data-color="orange">ส้ม</button>
+          <button class="choice" data-color="black">ดำ</button>
+          <button class="choice" data-color="pink">ชมพู</button>
+        </div>
+      </div>
+
+      <div id="endView" class="hidden end-box">
+        <h2>หมดเวลา!</h2>
+        <div class="metrics">
+          <div class="metric"><div class="label">คะแนนรวม</div><div class="value" id="mScore">0 คะแนน</div></div>
+          <div class="metric"><div class="label">จำนวนข้อที่ตอบทั้งหมด</div><div class="value" id="mAnswered">0 ข้อ</div></div>
+          <div class="metric"><div class="label">ตอบถูก / ตอบผิด</div><div class="value" id="mCorrectWrong">0 / 0</div></div>
+          <div class="metric"><div class="label">ความแม่นยำ</div><div class="value" id="mAccuracy">0%</div></div>
+          <div class="metric"><div class="label">เวลาที่ใช้ทั้งหมด</div><div class="value" id="mTotalTime">30.00 วินาที</div></div>
+          <div class="metric"><div class="label">เวลาเฉลี่ยต่อข้อ</div><div class="value" id="mAvgTime">0.00 วินาที</div></div>
+        </div>
+        <div class="summary" id="summaryText"></div>
+        <div class="status" id="sendStatus"></div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="primary" id="startBtn">เริ่มเกม</button>
+      <button class="secondary" id="restartBtn">เล่นใหม่</button>
+      <button class="primary" id="resendBtn">ส่งผลอีกครั้ง</button>
+    </div>
+
+    <div class="note">เวอร์ชันนี้ส่งผลแบบฟอร์มไปยัง Google Apps Script โดยตรง จึงเหมาะกับการเปิดจากไฟล์ในเครื่องด้วย</div>
+
+    <iframe name="hidden_iframe" id="hidden_iframe" style="display:none"></iframe>
+    <form id="hiddenForm" method="POST" target="hidden_iframe" style="display:none"></form>
+  </div>
+</div>
+
+<script>
+  const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxssZzjpn8B1WGFD3T24MgyZ2cYD9LoejTxavVjxKP54NN1VUDOfv2TON8TABL9ZrEB/exec";
+
+  const words = ['แดง','ฟ้า','เขียว','ส้ม','ดำ','ชมพู'];
+  const colors = [
+    { key:'red', label:'แดง' },
+    { key:'blue', label:'ฟ้า' },
+    { key:'green', label:'เขียว' },
+    { key:'orange', label:'ส้ม' },
+    { key:'black', label:'ดำ' },
+    { key:'pink', label:'ชมพู' }
+  ];
+
+  let score=0, round=0, timeLeft=30, timer=null, correctColor='', gameActive=false, correct=0, wrong=0;
+  const totalTime = 30;
+
+  const participantName = document.getElementById('participantName');
+  const participantId = document.getElementById('participantId');
+  const assessmentDate = document.getElementById('assessmentDate');
+  const sendStatus = document.getElementById('sendStatus');
+  const sendStatusBox = document.getElementById('sendStatusBox');
+
+  const wordEl = document.getElementById('word');
+  const resultEl = document.getElementById('result');
+  const scoreEl = document.getElementById('score');
+  const roundEl = document.getElementById('round');
+  const timeEl = document.getElementById('time');
+
+  const startView = document.getElementById('startView');
+  const playView = document.getElementById('playView');
+  const endView = document.getElementById('endView');
+
+  const mScore = document.getElementById('mScore');
+  const mAnswered = document.getElementById('mAnswered');
+  const mCorrectWrong = document.getElementById('mCorrectWrong');
+  const mAccuracy = document.getElementById('mAccuracy');
+  const mTotalTime = document.getElementById('mTotalTime');
+  const mAvgTime = document.getElementById('mAvgTime');
+  const summaryText = document.getElementById('summaryText');
+
+  const hiddenForm = document.getElementById('hiddenForm');
+
+  function randomItem(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+  function updateScore(){ scoreEl.textContent = score; }
+  function updateSendStatus(text, ok=false){
+    sendStatus.textContent = text;
+    sendStatus.className = 'status ' + (ok ? 'success':'error');
+    sendStatusBox.value = text;
+  }
+  function newRound(){
+    if(!gameActive) return;
+    const randomWord = randomItem(words);
+    const randomColor = randomItem(colors);
+    wordEl.textContent = 'สี' + randomWord;
+    wordEl.style.color = randomColor.key;
+    correctColor = randomColor.key;
+    round++;
+    roundEl.textContent = round;
+    resultEl.textContent = '';
+  }
+  function startGame(){
+    if(!participantName.value.trim() || !participantId.value.trim() || !assessmentDate.value){
+      alert('กรุณากรอกชื่อ รหัส และวันที่ประเมินให้ครบก่อนเริ่มเกม');
+      return;
+    }
+    score=0; round=0; timeLeft=30; correct=0; wrong=0; gameActive=true;
+    updateScore();
+    roundEl.textContent='0';
+    timeEl.textContent=timeLeft;
+    resultEl.textContent='';
+    updateSendStatus('กำลังเล่นเกม...', true);
+    endView.classList.add('hidden');
+    startView.classList.add('hidden');
+    playView.classList.remove('hidden');
+    newRound();
+    clearInterval(timer);
+    timer = setInterval(() => {
+      timeLeft--;
+      timeEl.textContent = timeLeft;
+      if(timeLeft <= 0) endGame();
+    }, 1000);
+  }
+  function composeSummary(accuracy, avgTime){
+    let accLevel = accuracy >= 80 ? 'ระดับดีมาก' : accuracy >= 60 ? 'ระดับปานกลาง' : 'ระดับที่ควรฝึกเพิ่ม';
+    let speedLevel = avgTime <= 1.5 ? 'ตอบได้เร็วมาก' : avgTime <= 2.5 ? 'ตอบได้ในระดับความเร็วปานกลาง' : 'ใช้เวลาตอบค่อนข้างนาน';
+    return `สรุปเบื้องต้น: ผู้เล่นได้คะแนน ${score} คะแนน จากการตอบทั้งหมด ${round} ข้อ ตอบถูก ${correct} ข้อ ตอบผิด ${wrong} ข้อ มีความแม่นยำ ${accuracy.toFixed(2)}% และใช้เวลาเฉลี่ย ${avgTime.toFixed(2)} วินาทีต่อข้อ โดยภาพรวมความแม่นยำอยู่ใน${accLevel} และ${speedLevel} เหมาะสำหรับใช้สรุปรายบุคคลหรือเปรียบเทียบก่อน–หลังเข้าร่วมกิจกรรมได้`;
+  }
+  function endGame(){
+    gameActive=false;
+    clearInterval(timer);
+    timer=null;
+    const accuracy = round > 0 ? (correct / round) * 100 : 0;
+    const avgTime = round > 0 ? totalTime / round : 0;
+
+    mScore.textContent = `${score} คะแนน`;
+    mAnswered.textContent = `${round} ข้อ`;
+    mCorrectWrong.textContent = `${correct} / ${wrong}`;
+    mAccuracy.textContent = `${accuracy.toFixed(2)}%`;
+    mTotalTime.textContent = `${totalTime.toFixed(2)} วินาที`;
+    mAvgTime.textContent = `${avgTime.toFixed(2)} วินาที`;
+    summaryText.textContent = composeSummary(accuracy, avgTime);
+
+    endView.classList.remove('hidden');
+    playView.classList.add('hidden');
+    startView.classList.add('hidden');
+
+    autoSendResult();
+  }
+
+  function buildPayload(){
+    const accuracy = round > 0 ? (correct / round) * 100 : 0;
+    const avgTime = round > 0 ? totalTime / round : 0;
+    return {
+      participant_name: participantName.value.trim(),
+      participant_id: participantId.value.trim(),
+      assessment_date: assessmentDate.value,
+      score: score,
+      total_answered: round,
+      correct: correct,
+      wrong: wrong,
+      accuracy_percent: accuracy.toFixed(2),
+      total_time_seconds: totalTime.toFixed(2),
+      avg_time_per_item: avgTime.toFixed(2),
+      user_agent: navigator.userAgent
+    };
+  }
+
+  function autoSendResult(){
+    try{
+      const payload = buildPayload();
+      hiddenForm.innerHTML = '';
+      hiddenForm.action = WEB_APP_URL;
+      Object.entries(payload).forEach(([key,val]) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = val;
+        hiddenForm.appendChild(input);
+      });
+      hiddenForm.submit();
+      updateSendStatus('ส่งผลอัตโนมัติแล้ว กรุณาตรวจสอบใน Google Sheets', true);
+    }catch(err){
+      updateSendStatus('ส่งผลอัตโนมัติไม่สำเร็จ', false);
+    }
+  }
+
+  document.querySelectorAll('.choice').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if(!gameActive) return;
+      const answer = btn.dataset.color;
+      if(answer === correctColor){
+        score++; correct++;
+        resultEl.textContent='ถูกต้อง!';
+        resultEl.style.color='#16a34a';
+      }else{
+        wrong++;
+        resultEl.textContent='ยังไม่ถูก!';
+        resultEl.style.color='#dc2626';
+      }
+      updateScore();
+      setTimeout(newRound, 240);
+    });
+  });
+
+  document.getElementById('startBtn').addEventListener('click', startGame);
+  document.getElementById('restartBtn').addEventListener('click', startGame);
+  document.getElementById('resendBtn').addEventListener('click', autoSendResult);
+
+  if(!assessmentDate.value){
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth()+1).padStart(2,'0');
+    const dd = String(now.getDate()).padStart(2,'0');
+    assessmentDate.value = `${yyyy}-${mm}-${dd}`;
+  }
+</script>
+</body>
+</html>
